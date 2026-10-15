@@ -26,10 +26,10 @@ import java.util.UUID;
  */
 public class CarService {
 
-    private final Map<UUID, Customer> customers;
-    private final Map<String, Car> carsByVin;
-    private final Map<UUID, Mechanic> mechanics;
-    private final Map<UUID, ServiceOrder> orders;
+    private Map<UUID, Customer> customers;
+    private Map<String, Car> carsByVin;
+    private Map<UUID, Mechanic> mechanics;
+    private Map<UUID, ServiceOrder> orders;
 
     public CarService() {
         this.customers = new HashMap<>();
@@ -104,42 +104,8 @@ public class CarService {
         return order;
     }
 
-    public List<ServiceOrder> findOrdersByStatus(OrderStatus status) {
-        if (status == null) {
-            throw new InvalidArgumentException("Order status cannot be null.");
-        }
-
-        return orders.values().stream()
-                .filter(order -> order.getStatus() == status)
-                .toList();
-    }
-
-    public List<ServiceOrder> findOrdersByCar(Car car) {
-        if (car == null) {
-            throw new InvalidArgumentException("Car cannot be null.");
-        }
-
-        return orders.values().stream()
-                .filter(order -> order.getCar() == car)
-                .toList();
-    }
-
-    public List<ServiceOrder> findOrdersByMechanic(Mechanic mechanic) {
-        if (mechanic == null) {
-            throw new InvalidArgumentException("Mechanic cannot be null.");
-        }
-
-        return orders.values().stream()
-                .filter(order -> order.getMechanic() == mechanic)
-                .toList();
-    }
-
     public void addWorkToOrder(UUID orderId, ServiceWork work) {
         findOrderById(orderId).addWork(work);
-    }
-
-    public void removeWorkFromOrder(UUID orderId, UUID workId) {
-        findOrderById(orderId).removeWork(workId);
     }
 
     public void assignMechanic(UUID orderId, UUID mechanicId) {
@@ -179,9 +145,7 @@ public class CarService {
         findOrderById(orderId).complete();
     }
 
-    public void cancelOrder(UUID orderId) {
-        findOrderById(orderId).cancel();
-    }
+
 
     private Customer findCustomerById(UUID customerId) {
         if (customerId == null) {
@@ -214,10 +178,11 @@ public class CarService {
             return;
         }
 
-        List<ServiceOrder> otherActiveOrders = orders.values().stream()
-                .filter(order -> order != targetOrder)
+        List<ServiceOrder> otherActiveOrders = orders.values()
+                .stream()
+                .filter(order -> !order.equals(targetOrder))
                 .filter(this::isActive)
-                .filter(order -> order.getMechanic() == mechanic)
+                .filter(order -> mechanic.equals(order.getMechanic()))
                 .toList();
 
         for (ServiceOrder otherOrder : otherActiveOrders) {
@@ -245,9 +210,9 @@ public class CarService {
             TimeSlot plannedSlot,
             Mechanic mechanic) {
         List<ServiceOrder> otherActiveOrders = orders.values().stream()
-                .filter(order -> order != targetOrder)
+                .filter(order -> !order.equals(targetOrder))
                 .filter(this::isActive)
-                .filter(order -> order.getMechanic() == mechanic)
+                .filter(order -> mechanic.equals(order.getMechanic()))
                 .toList();
 
         boolean unplannedOrderExists = otherActiveOrders.stream()
@@ -270,7 +235,7 @@ public class CarService {
     }
 
     private boolean isActive(ServiceOrder order) {
-        return order.getStatus() != OrderStatus.COMPLETED
-                && order.getStatus() != OrderStatus.CANCELLED;
+        return !OrderStatus.COMPLETED.equals(order.getStatus())
+                && !OrderStatus.CANCELLED.equals(order.getStatus());
     }
 }

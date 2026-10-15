@@ -6,11 +6,11 @@ public class Car {
 
     private static final int FIRST_AUTOMOTIVE_PRODUCTION_YEAR = 1886;
 
-    private final String vin;
-    private final String brand;
-    private final String model;
-    private final int productionYear;
-    private final Customer owner;
+    private String vin;
+    private String brand;
+    private String model;
+    private int productionYear;
+    private Customer owner;
 
     public Car(String vin, String brand, String model, int productionYear, Customer owner) {
         if (vin == null || vin.isBlank()) {
@@ -47,10 +47,6 @@ public class Car {
 
     public String getModel() {
         return model;
-    }
-
-    public int getProductionYear() {
-        return productionYear;
     }
 
     public Customer getOwner() {

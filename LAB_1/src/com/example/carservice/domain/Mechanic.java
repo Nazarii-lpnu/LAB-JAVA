@@ -7,9 +7,9 @@ import java.util.UUID;
 
 public class Mechanic {
 
-    private final UUID id;
-    private final String name;
-    private final MechanicSpecialization specialization;
+    private UUID id;
+    private String name;
+    private MechanicSpecialization specialization;
 
     public Mechanic(UUID id, String name, MechanicSpecialization specialization) {
         if (id == null) {
@@ -44,8 +44,8 @@ public class Mechanic {
             throw new InvalidArgumentException("Service work cannot be null.");
         }
 
-        return specialization == MechanicSpecialization.GENERAL
-                || specialization == work.getSpecialization();
+        return MechanicSpecialization.GENERAL.equals(specialization)
+                || specialization.equals(work.getSpecialization());
     }
 
     /**

@@ -26,14 +26,12 @@ public final class TimeSlot {
     }
 
     public LocalDateTime getStart() {
+
         return start;
     }
 
-    public Duration getDuration() {
-        return duration;
-    }
-
     public LocalDateTime getEnd() {
+
         return start.plus(duration);
     }
 

@@ -9,12 +9,12 @@ import java.util.UUID;
 
 public class ServiceWork {
 
-    private final UUID id;
-    private final String description;
-    private final MechanicSpecialization specialization;
-    private final BigDecimal partsCost;
-    private final BigDecimal laborCost;
-    private final Duration duration;
+    private UUID id;
+    private String description;
+    private MechanicSpecialization specialization;
+    private BigDecimal partsCost;
+    private BigDecimal laborCost;
+    private Duration duration;
     private WorkStatus status;
 
     public ServiceWork(
@@ -72,24 +72,12 @@ public class ServiceWork {
         return laborCost;
     }
 
-    public Duration getDuration() {
-        return duration;
-    }
-
-    public BigDecimal getTotalCost() {
-        return partsCost.add(laborCost);
-    }
-
     public boolean isCompleted() {
-        return status == WorkStatus.COMPLETED;
-    }
-
-    public WorkStatus getStatus() {
-        return status;
+        return WorkStatus.COMPLETED.equals(status);
     }
 
     public void complete() {
-        if (status == WorkStatus.COMPLETED) {
+        if (WorkStatus.COMPLETED.equals(status)) {
             throw new InvalidStateTransitionException("Service work is already completed.");
         }
         status = WorkStatus.COMPLETED;

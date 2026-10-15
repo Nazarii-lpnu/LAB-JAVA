@@ -8,9 +8,9 @@ import java.util.UUID;
 
 public class Customer {
 
-    private final UUID id;
-    private final String name;
-    private final List<Car> cars;
+    private UUID id;
+    private String name;
+    private List<Car> cars;
 
     public Customer(UUID id, String name) {
         if (id == null) {
@@ -33,15 +33,11 @@ public class Customer {
         return name;
     }
 
-    public List<Car> getCars() {
-        return List.copyOf(cars);
-    }
-
     public void addCar(Car car) {
         if (car == null) {
             throw new InvalidArgumentException("Car cannot be null.");
         }
-        if (car.getOwner() != this) {
+        if (!this.equals(car.getOwner())) {
             throw new InvalidArgumentException("Car owner must be this customer.");
         }
         if (cars.stream().anyMatch(existingCar -> existingCar.getVin().equals(car.getVin()))) {

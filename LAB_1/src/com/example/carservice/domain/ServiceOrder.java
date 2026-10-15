@@ -12,27 +12,30 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class ServiceOrder {
 
-    private static final BigDecimal URGENT_LABOR_MULTIPLIER = new BigDecimal("1.20");
-    private static final int MONEY_SCALE = 2;
+    private static BigDecimal URGENT_LABOR_MULTIPLIER = new BigDecimal("1.20");
+    private static int MONEY_SCALE = 2;
 
-    private final UUID id;
-    private final Car car;
-    private final List<ServiceWork> works;
-    private final LocalDateTime createdAt;
+    private UUID id;
+    private Car car;
+    private List<ServiceWork> works;
+    private LocalDateTime createdAt;
     private Mechanic mechanic;
     private OrderStatus status;
     private OrderPriority priority;
     private TimeSlot plannedSlot;
 
     public ServiceOrder(UUID id, Car car) {
+
         this(id, car, OrderPriority.NORMAL, LocalDateTime.now());
     }
 
     public ServiceOrder(UUID id, Car car, OrderPriority priority) {
+
         this(id, car, priority, LocalDateTime.now());
     }
 
@@ -66,24 +69,12 @@ public class ServiceOrder {
         return car;
     }
 
-    public List<ServiceWork> getWorks() {
-        return List.copyOf(works);
-    }
-
     public Mechanic getMechanic() {
         return mechanic;
     }
 
     public OrderStatus getStatus() {
         return status;
-    }
-
-    public OrderPriority getPriority() {
-        return priority;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
     }
 
     public TimeSlot getPlannedSlot() {
@@ -99,15 +90,15 @@ public class ServiceOrder {
             laborCost = laborCost.add(work.getLaborCost());
         }
 
-        if (priority == OrderPriority.URGENT) {
+        if (OrderPriority.URGENT.equals(priority)) {
             laborCost = laborCost.multiply(URGENT_LABOR_MULTIPLIER);
         }
 
         return partsCost.add(laborCost).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
     }
 
-    public BigDecimal getTotalCost() {
-        return calculateTotalCost();
+    public Optional<Gift> getGift() {
+        return Gift.forOrderAmount(calculateTotalCost());
     }
 
     public void addWork(ServiceWork work) {
@@ -138,18 +129,12 @@ public class ServiceOrder {
             throw new InvalidArgumentException("Mechanic cannot be null.");
         }
         if (!mechanic.canPerformAll(works)) {
-            throw new MechanicNotCompatibleException(
-                    "Mechanic '" + mechanic.getId()
-                            + "' is not compatible with every work in the order.");
+            throw new MechanicNotCompatibleException("Mechanic '" + mechanic.getId() + "' is not compatible with every work in the order.");
         }
 
         this.mechanic = mechanic;
     }
 
-    public void planStartAt(LocalDateTime start, Duration duration) {
-        ensureModifiable();
-        this.plannedSlot = new TimeSlot(start, duration);
-    }
 
     public void plan(TimeSlot timeSlot) {
         ensureModifiable();
@@ -180,22 +165,19 @@ public class ServiceOrder {
     }
 
     public void completeWork(UUID workId) {
-        if (status != OrderStatus.IN_PROGRESS) {
-            throw new InvalidStateTransitionException(
-                    "Work can be completed only while the order is in progress.");
+        if (!OrderStatus.IN_PROGRESS.equals(status)) {
+            throw new InvalidStateTransitionException("Work can be completed only while the order is in progress.");
         }
         ServiceWork work = findWork(workId);
         work.complete();
     }
 
     public void complete() {
-        if (status != OrderStatus.IN_PROGRESS) {
-            throw new InvalidStateTransitionException(
-                    "An order can be completed only while it is in progress.");
+        if (!OrderStatus.IN_PROGRESS.equals(status)) {
+            throw new InvalidStateTransitionException("An order can be completed only while it is in progress.");
         }
         if (works.stream().anyMatch(work -> !work.isCompleted())) {
-            throw new InvalidStateTransitionException(
-                    "An order cannot be completed while unfinished work remains.");
+            throw new InvalidStateTransitionException("An order cannot be completed while unfinished work remains.");
         }
         status = OrderStatus.COMPLETED;
     }
@@ -206,8 +188,7 @@ public class ServiceOrder {
 
     private void ensureTransitionAllowed(OrderStatus targetStatus) {
         if (!isAllowedTransition(status, targetStatus)) {
-            throw new InvalidStateTransitionException(
-                    "Cannot change order status from " + status + " to " + targetStatus + ".");
+            throw new InvalidStateTransitionException("Cannot change order status from " + status + " to " + targetStatus + ".");
         }
     }
 
@@ -217,27 +198,24 @@ public class ServiceOrder {
     }
 
     private boolean isAllowedTransition(OrderStatus currentStatus, OrderStatus targetStatus) {
-        return (currentStatus == OrderStatus.CREATED && targetStatus == OrderStatus.DIAGNOSED)
-                || (currentStatus == OrderStatus.CREATED && targetStatus == OrderStatus.CANCELLED)
-                || (currentStatus == OrderStatus.DIAGNOSED && targetStatus == OrderStatus.APPROVED)
-                || (currentStatus == OrderStatus.DIAGNOSED && targetStatus == OrderStatus.CANCELLED)
-                || (currentStatus == OrderStatus.APPROVED && targetStatus == OrderStatus.IN_PROGRESS)
-                || (currentStatus == OrderStatus.APPROVED && targetStatus == OrderStatus.CANCELLED)
-                || (currentStatus == OrderStatus.IN_PROGRESS && targetStatus == OrderStatus.COMPLETED);
+        return (OrderStatus.CREATED.equals(currentStatus) && OrderStatus.DIAGNOSED.equals(targetStatus))
+                || (OrderStatus.CREATED.equals(currentStatus) && OrderStatus.CANCELLED.equals(targetStatus))
+                || (OrderStatus.DIAGNOSED.equals(currentStatus) && OrderStatus.APPROVED.equals(targetStatus))
+                || (OrderStatus.DIAGNOSED.equals(currentStatus) && OrderStatus.CANCELLED.equals(targetStatus))
+                || (OrderStatus.APPROVED.equals(currentStatus) && OrderStatus.IN_PROGRESS.equals(targetStatus))
+                || (OrderStatus.APPROVED.equals(currentStatus) && OrderStatus.CANCELLED.equals(targetStatus))
+                || (OrderStatus.IN_PROGRESS.equals(currentStatus) && OrderStatus.COMPLETED.equals(targetStatus));
     }
 
     private void ensureModifiable() {
-        if (status == OrderStatus.COMPLETED || status == OrderStatus.CANCELLED) {
-            throw new OrderModificationNotAllowedException(
-                    "Completed or cancelled orders cannot be modified.");
+        if (OrderStatus.COMPLETED.equals(status) || OrderStatus.CANCELLED.equals(status)) {
+            throw new OrderModificationNotAllowedException("Completed or cancelled orders cannot be modified.");
         }
     }
 
     private void ensureMechanicCanPerform(ServiceWork work) {
         if (mechanic != null && !mechanic.canPerformAll(List.of(work))) {
-            throw new MechanicNotCompatibleException(
-                    "Assigned mechanic '" + mechanic.getId()
-                            + "' is not compatible with work '" + work.getId() + "'.");
+            throw new MechanicNotCompatibleException("Assigned mechanic '" + mechanic.getId() + "' is not compatible with work '" + work.getId() + "'.");
         }
     }
 
@@ -246,10 +224,6 @@ public class ServiceOrder {
             throw new InvalidArgumentException("Work id cannot be null.");
         }
 
-        return works.stream()
-                .filter(work -> work.getId().equals(workId))
-                .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Work with id '" + workId + "' is not part of this order."));
+        return works.stream().filter(work -> work.getId().equals(workId)).findFirst().orElseThrow(() -> new EntityNotFoundException("Work with id '" + workId + "' is not part of this order."));
     }
 }

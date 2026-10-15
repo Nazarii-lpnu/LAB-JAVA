@@ -4,7 +4,6 @@ import com.example.carservice.domain.Car;
 import com.example.carservice.domain.Customer;
 import com.example.carservice.domain.Mechanic;
 import com.example.carservice.domain.MechanicSpecialization;
-import com.example.carservice.domain.OrderStatus;
 import com.example.carservice.domain.ServiceOrder;
 import com.example.carservice.domain.ServiceWork;
 import com.example.carservice.exception.DomainException;
@@ -24,7 +23,7 @@ import java.util.UUID;
 /**
  * Console entry point for the automotive service application.
  */
-public final class CarServiceDemo {
+public class CarServiceDemo {
 
 
 
@@ -33,7 +32,7 @@ public final class CarServiceDemo {
 
         printHeader("AUTOMOTIVE SERVICE DOMAIN DEMO");
 
-        Customer customer = carService.registerCustomer("Olena Kovalenko");
+        Customer customer = carService.registerCustomer("Oleh Melnyk");
         System.out.println("Registered customer: " + customer.getName()
                 + " (" + customer.getId() + ")");
 
@@ -129,6 +128,10 @@ public final class CarServiceDemo {
         carService.completeOrder(order.getId());
         printStatus(order, "Completed order");
         System.out.println("Final total cost: " + order.calculateTotalCost());
+        order.getGift().ifPresentOrElse(
+                gift -> System.out.println("Gift awarded: " + gift.getDescription()
+                        + " (" + gift.getType() + ")"),
+                () -> System.out.println("No gift awarded for this order."));
 
         return order;
     }
